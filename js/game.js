@@ -33,17 +33,19 @@ var mainState = {
     this.walls = game.add.group();
     this.coins = game.add.group();
     this.enemies = game.add.group();
+    this.specialCoin = null;
+    this.removeableEnemies = [];
 
     // Design the level. x = wall, o = coin, ! = lava.
     var level = [
-        'xxxxxxxxxxxxxxxxxxxxxx',
-        '!      !             x',
-        '!      !          o  x',
-        '!          o         x',
-        '!      o      !      x',
-        '!          x      x  x',
-        '!      !      o      x',
-        'xxxxxxxxx!!!!xxx!!!!!x',
+       ' xxxxxxxxxxxxxxxxxxxxxx',
+       ' !      !             x',
+       ' !      !          s  x',
+       ' r          o         x',
+       'or      o      !      x',
+       ' r          x      x  x',
+       ' !      !      o      x',
+       ' xxxxxxxxx!!!!xxx!!!!!x',
     ];
 
     // Create the level by going through the array
@@ -74,6 +76,20 @@ var mainState = {
               enemy.height = 20;
               this.enemies.add(enemy);
           }
+
+          else if (level[i][j] == 's') {
+              var specialCoin = game.add.sprite(30+20*j, 30+20*i, 'coin');
+              specialCoin.width = 20;
+              specialCoin.height = 20;
+              this.specialCoin = specialCoin;
+          }
+
+          else if (level[i][j] == 'r') {
+            var removeableEnemy = game.add.sprite(30+20*j, 30+20*i, 'enemy');
+            removeableEnemy.width = 20;
+            removeableEnemy.height = 20;
+            this.removeableEnemies.push(removeableEnemy);
+          }
       }
     }
   },
@@ -84,6 +100,9 @@ var mainState = {
 
     // Call the 'takeCoin' function when the player takes a coin
     game.physics.arcade.overlap(this.player, this.coins, this.takeCoin, null, this);
+
+    // Call the 'takeCoin' function when the player takes a coin
+    game.physics.arcade.overlap(this.player, this.specialCoin, this.takeSpecialCoin, null, this);
 
     // Call the 'restart' function when the player touches the enemy
     game.physics.arcade.overlap(this.player, this.enemies, this.restart, null, this);
@@ -105,6 +124,11 @@ var mainState = {
   // Function to kill a coin
   takeCoin: function(player, coin) {
     coin.kill();
+  },
+
+  takeSpecialCoin: function(player, specialCoin) {
+    specialCoin.kill();
+    this.removeableEnemies.forEach(enemy => enemy.kill());
   },
 
   // Function to restart the game
