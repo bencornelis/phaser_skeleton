@@ -9,6 +9,7 @@ var mainState = {
   },
 
   create: function() {
+    this.game = game;
     // Set the background color to blue
     game.stage.backgroundColor = '#3598db';
 
@@ -35,6 +36,8 @@ var mainState = {
     this.enemies = game.add.group();
     this.specialCoin = null;
     this.removeableEnemies = [];
+    this.removeableWalls = [];
+    this.mysteryWalls = [];
 
     // Design the level. x = wall, o = coin, ! = lava.
     var level = [
@@ -43,9 +46,9 @@ var mainState = {
        ' !      !          s  x',
        ' r          o         x',
        'or      o      !      x',
-       ' r          x      x  x',
+       ' r          x      d  x',
        ' !      !      o      x',
-       ' xxxxxxxxx!!!!xxx!!!!!x',
+       ' xxxxxxxxx!!!!qqq!!!!!x',
     ];
 
     // Create the level by going through the array
@@ -91,6 +94,24 @@ var mainState = {
             this.removeableEnemies.push(removeableEnemy);
             this.enemies.add(removeableEnemy);
           }
+
+          else if (level[i][j] == 'd') {
+            var removeableWall = game.add.sprite(30+20*j, 30+20*i, 'wall');
+            removeableWall.width = 20;
+            removeableWall.height = 20;
+            this.removeableWalls.push(removeableWall);
+            this.walls.add(removeableWall);
+            removeableWall.body.immovable = true;
+          }
+
+          else if (level[i][j] == 'q') {
+            var mysteryWall = game.add.sprite(30+20*j, 30+20*i, 'wall');
+            mysteryWall.width = 20;
+            mysteryWall.height = 20;
+            this.mysteryWalls.push(mysteryWall);
+            this.walls.add(mysteryWall);
+            mysteryWall.body.immovable = true;
+          }
       }
     }
   },
@@ -130,6 +151,17 @@ var mainState = {
   takeSpecialCoin: function(player, specialCoin) {
     specialCoin.kill();
     this.removeableEnemies.forEach(enemy => enemy.kill());
+    this.removeableWalls.forEach(wall => wall.kill());
+    this.mysteryWalls.forEach(mysteryWall => {
+      const x = mysteryWall.world.x;
+      const y = mysteryWall.world.y;
+      mysteryWall.kill();
+
+      const enemy = this.game.add.sprite(x, y, 'enemy');
+      enemy.width = 20;
+      enemy.height = 20;
+      this.enemies.add(enemy);
+    });
   },
 
   // Function to restart the game
