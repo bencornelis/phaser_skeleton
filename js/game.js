@@ -89,6 +89,7 @@ var mainState = {
             removeableEnemy.width = 20;
             removeableEnemy.height = 20;
             this.removeableEnemies.push(removeableEnemy);
+            this.enemies.add(removeableEnemy);
           }
       }
     }
