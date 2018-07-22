@@ -78,6 +78,14 @@ var mainState = {
   },
 
   update: function() {
+    // Make the player and the walls collide
+    game.physics.arcade.collide(this.player, this.walls);
+
+    // Call the 'takeCoin' function when the player takes a coin
+    game.physics.arcade.overlap(this.player, this.coins, this.takeCoin, null, this);
+
+    // Call the 'restart' function when the player touches the enemy
+    game.physics.arcade.overlap(this.player, this.enemies, this.restart, null, this);
     // Here we update the game 60 times per second
     // Move the player when an arrow key is pressed
     if (this.cursor.left.isDown)
@@ -87,24 +95,10 @@ var mainState = {
     else
       this.player.body.velocity.x = 0;
 
-    if (this.cursor.up.isDown) {
-      console.log('cursor is down')
-    }
     // Make the player jump if he is touching the ground
-    if (this.cursor.up.isDown && this.player.body.touching) {
-      console.log(this.player.body.touching)
-      console.log('should jump')
-      this.player.body.velocity.y = 1700;
+    if (this.cursor.up.isDown && this.player.body.touching.down) {
+      this.player.body.velocity.y = -250;
     }
-
-    // Make the player and the walls collide
-    game.physics.arcade.collide(this.player, this.walls);
-
-    // Call the 'takeCoin' function when the player takes a coin
-    game.physics.arcade.overlap(this.player, this.coins, this.takeCoin, null, this);
-
-    // Call the 'restart' function when the player touches the enemy
-    game.physics.arcade.overlap(this.player, this.enemies, this.restart, null, this);
   },
 
   // Function to kill a coin
