@@ -2,10 +2,10 @@
 var mainState = {
   preload: function() {
     // Here we preload the assets
-    game.load.image('player', 'assets/player.png');
+    game.load.image('player', 'assets/cokecan.png');
     game.load.image('wall', 'assets/wall.png');
-    game.load.image('coin', 'assets/coin.png');
-    game.load.image('enemy', 'assets/enemy.png');
+    game.load.image('coin', 'assets/melon.png');
+    game.load.image('enemy', 'assets/saw.png');
   },
 
   create: function() {
@@ -23,6 +23,8 @@ var mainState = {
 
     // Create the player in the middle of the game
     this.player = game.add.sprite(70, 100, 'player');
+    this.player.width = 20;
+    this.player.height = 20;
 
     // Add gravity to make it fall
     this.player.body.gravity.y = 600;
@@ -50,6 +52,8 @@ var mainState = {
           // Create a wall and add it to the 'walls' group
           if (level[i][j] == 'x') {
               var wall = game.add.sprite(30+20*j, 30+20*i, 'wall');
+              wall.width = 20;
+              wall.height = 20;
               this.walls.add(wall);
               wall.body.immovable = true;
           }
@@ -57,12 +61,16 @@ var mainState = {
           // Create a coin and add it to the 'coins' group
           else if (level[i][j] == 'o') {
               var coin = game.add.sprite(30+20*j, 30+20*i, 'coin');
+              coin.width = 20;
+              coin.height = 20;
               this.coins.add(coin);
           }
 
           // Create a enemy and add it to the 'enemies' group
           else if (level[i][j] == '!') {
               var enemy = game.add.sprite(30+20*j, 30+20*i, 'enemy');
+              enemy.width = 20;
+              enemy.height = 20;
               this.enemies.add(enemy);
           }
       }
@@ -79,9 +87,15 @@ var mainState = {
     else
       this.player.body.velocity.x = 0;
 
+    if (this.cursor.up.isDown) {
+      console.log('cursor is down')
+    }
     // Make the player jump if he is touching the ground
-    if (this.cursor.up.isDown && this.player.body.touching.down)
-      this.player.body.velocity.y = -250;
+    if (this.cursor.up.isDown && this.player.body.touching) {
+      console.log(this.player.body.touching)
+      console.log('should jump')
+      this.player.body.velocity.y = 1700;
+    }
 
     // Make the player and the walls collide
     game.physics.arcade.collide(this.player, this.walls);
