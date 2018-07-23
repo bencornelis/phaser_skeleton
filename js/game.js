@@ -194,8 +194,6 @@ var mainState = {
       return;
     }
 
-    console.log('WALL HIT', wall);
-
     const moveTime = 1500; // ms
     const moveWallLeft = ({ numSpaces }) => {
       const x = this.movingWall.world.x;
