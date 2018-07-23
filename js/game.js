@@ -44,13 +44,15 @@ var mainState = {
     this.mysteryWalls = [];
     this.movingWall = null;
     this.movingWallIntervalId = null;
+    this.hiddenEnemySpriteCoords = [];
+    this.visibleHiddenEnemies = [];
 
     // Design the level. x = wall, o = coin, ! = lava.
     var level = [
        ' xxxxxxxxxxxxxxxxxxxxxx',
-       ' !      !             x',
-       ' !      !           s x',
-       ' r          o         x',
+       ' !      !      h      x',
+       ' !      !      h    s x',
+       ' r          o  h      x',
        'or      o      !      t',
        ' r          m     d   x',
        ' !      !      o      x',
@@ -135,6 +137,10 @@ var mainState = {
             this.specialWalls.add(specialWall);
             specialWall.body.immovable = true;
           }
+
+          else if (level[i][j] == 'h') {
+            this.hiddenEnemySpriteCoords.push([ 30+20*j, 30+20*i ]);
+          }
       }
     }
   },
@@ -174,6 +180,8 @@ var mainState = {
   },
 
   takeSpecialCoin: function(player, specialCoin) {
+    console.log(this.hiddenEnemySpriteCoords)
+
     specialCoin.kill();
     this.removeableEnemies.forEach(enemy => enemy.kill());
     this.removeableWalls.forEach(wall => wall.kill());
@@ -187,12 +195,24 @@ var mainState = {
       enemy.height = CELL_DIM;
       this.enemies.add(enemy);
     });
+
+    setTimeout(() => {
+      this.hiddenEnemySpriteCoords.forEach(([x,y]) => {
+        const enemy = this.game.add.sprite(x, y, 'enemy');
+        enemy.width = CELL_DIM;
+        enemy.height = CELL_DIM;
+        this.enemies.add(enemy);
+        this.visibleHiddenEnemies.push(enemy);
+      });
+    })
   },
 
   handleSpecialWallCollision: function(player, wall) {
     if (this.movingWallIntervalId) {
       return;
     }
+
+    this.visibleHiddenEnemies.forEach(enemy => enemy.kill());
 
     const moveTime = 1500; // ms
     const moveWallLeft = ({ numSpaces }) => {
