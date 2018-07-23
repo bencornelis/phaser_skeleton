@@ -1,3 +1,5 @@
+const CELL_DIM = 20; // cell dimension
+
 // Create the state that will contain the whole game
 var mainState = {
   preload: function() {
@@ -9,6 +11,7 @@ var mainState = {
   },
 
   create: function() {
+    clearInterval(this.movingWallIntervalId);
     this.game = game;
     // Set the background color to blue
     game.stage.backgroundColor = '#3598db';
@@ -24,8 +27,8 @@ var mainState = {
 
     // Create the player in the middle of the game
     this.player = game.add.sprite(70, 100, 'player');
-    this.player.width = 20;
-    this.player.height = 20;
+    this.player.width = CELL_DIM;
+    this.player.height = CELL_DIM;
 
     // Add gravity to make it fall
     this.player.body.gravity.y = 600;
@@ -34,19 +37,22 @@ var mainState = {
     this.walls = game.add.group();
     this.coins = game.add.group();
     this.enemies = game.add.group();
+    this.specialWalls = game.add.group();
     this.specialCoin = null;
     this.removeableEnemies = [];
     this.removeableWalls = [];
     this.mysteryWalls = [];
+    this.movingWall = null;
+    this.movingWallIntervalId = null;
 
     // Design the level. x = wall, o = coin, ! = lava.
     var level = [
        ' xxxxxxxxxxxxxxxxxxxxxx',
        ' !      !             x',
-       ' !      !          s  x',
+       ' !      !           s x',
        ' r          o         x',
-       'or      o      !      x',
-       ' r          x      d  x',
+       'or      o      !      t',
+       ' r          m     d   x',
        ' !      !      o      x',
        ' xxxxxxxxx!!!!qqq!!!!!x',
     ];
@@ -58,8 +64,8 @@ var mainState = {
           // Create a wall and add it to the 'walls' group
           if (level[i][j] == 'x') {
               var wall = game.add.sprite(30+20*j, 30+20*i, 'wall');
-              wall.width = 20;
-              wall.height = 20;
+              wall.width = CELL_DIM;
+              wall.height = CELL_DIM;
               this.walls.add(wall);
               wall.body.immovable = true;
           }
@@ -67,38 +73,38 @@ var mainState = {
           // Create a coin and add it to the 'coins' group
           else if (level[i][j] == 'o') {
               var coin = game.add.sprite(30+20*j, 30+20*i, 'coin');
-              coin.width = 20;
-              coin.height = 20;
+              coin.width = CELL_DIM;
+              coin.height = CELL_DIM;
               this.coins.add(coin);
           }
 
           // Create a enemy and add it to the 'enemies' group
           else if (level[i][j] == '!') {
               var enemy = game.add.sprite(30+20*j, 30+20*i, 'enemy');
-              enemy.width = 20;
-              enemy.height = 20;
+              enemy.width = CELL_DIM;
+              enemy.height = CELL_DIM;
               this.enemies.add(enemy);
           }
 
           else if (level[i][j] == 's') {
               var specialCoin = game.add.sprite(30+20*j, 30+20*i, 'coin');
-              specialCoin.width = 20;
-              specialCoin.height = 20;
+              specialCoin.width = CELL_DIM;
+              specialCoin.height = CELL_DIM;
               this.specialCoin = specialCoin;
           }
 
           else if (level[i][j] == 'r') {
             var removeableEnemy = game.add.sprite(30+20*j, 30+20*i, 'enemy');
-            removeableEnemy.width = 20;
-            removeableEnemy.height = 20;
+            removeableEnemy.width = CELL_DIM;
+            removeableEnemy.height = CELL_DIM;
             this.removeableEnemies.push(removeableEnemy);
             this.enemies.add(removeableEnemy);
           }
 
           else if (level[i][j] == 'd') {
             var removeableWall = game.add.sprite(30+20*j, 30+20*i, 'wall');
-            removeableWall.width = 20;
-            removeableWall.height = 20;
+            removeableWall.width = CELL_DIM;
+            removeableWall.height = CELL_DIM;
             this.removeableWalls.push(removeableWall);
             this.walls.add(removeableWall);
             removeableWall.body.immovable = true;
@@ -106,11 +112,28 @@ var mainState = {
 
           else if (level[i][j] == 'q') {
             var mysteryWall = game.add.sprite(30+20*j, 30+20*i, 'wall');
-            mysteryWall.width = 20;
-            mysteryWall.height = 20;
+            mysteryWall.width = CELL_DIM;
+            mysteryWall.height = CELL_DIM;
             this.mysteryWalls.push(mysteryWall);
             this.walls.add(mysteryWall);
             mysteryWall.body.immovable = true;
+          }
+
+          else if (level[i][j] == 'm') {
+            var movingWall = game.add.sprite(30+20*j, 30+20*i, 'wall');
+            movingWall.width = CELL_DIM;
+            movingWall.height = CELL_DIM;
+            this.movingWall = movingWall;
+            this.walls.add(this.movingWall);
+            this.movingWall.body.immovable = true;
+          }
+
+          else if (level[i][j] == 't') {
+            var specialWall = game.add.sprite(30+20*j, 30+20*i, 'wall');
+            specialWall.width = CELL_DIM;
+            specialWall.height = CELL_DIM;
+            this.specialWalls.add(specialWall);
+            specialWall.body.immovable = true;
           }
       }
     }
@@ -119,6 +142,7 @@ var mainState = {
   update: function() {
     // Make the player and the walls collide
     game.physics.arcade.collide(this.player, this.walls);
+    game.physics.arcade.collide(this.player, this.specialWalls, this.handleSpecialWallCollision, null, this);
 
     // Call the 'takeCoin' function when the player takes a coin
     game.physics.arcade.overlap(this.player, this.coins, this.takeCoin, null, this);
@@ -128,6 +152,7 @@ var mainState = {
 
     // Call the 'restart' function when the player touches the enemy
     game.physics.arcade.overlap(this.player, this.enemies, this.restart, null, this);
+
     // Here we update the game 60 times per second
     // Move the player when an arrow key is pressed
     if (this.cursor.left.isDown)
@@ -158,14 +183,51 @@ var mainState = {
       mysteryWall.kill();
 
       const enemy = this.game.add.sprite(x, y, 'enemy');
-      enemy.width = 20;
-      enemy.height = 20;
+      enemy.width = CELL_DIM;
+      enemy.height = CELL_DIM;
       this.enemies.add(enemy);
     });
   },
 
+  handleSpecialWallCollision: function(player, wall) {
+    if (this.movingWallIntervalId) {
+      return;
+    }
+
+    console.log('WALL HIT', wall);
+
+    const moveTime = 1500; // ms
+    const moveWallLeft = ({ numSpaces }) => {
+      const x = this.movingWall.world.x;
+      const y = this.movingWall.world.y;
+
+      this.game.physics.arcade.moveToXY(this.movingWall, x - numSpaces * CELL_DIM, y, 0, moveTime);
+    }
+
+    const moveWallRight = ({ numSpaces }) => {
+      const x = this.movingWall.world.x;
+      const y = this.movingWall.world.y;
+
+      this.game.physics.arcade.moveToXY(this.movingWall, x + numSpaces * CELL_DIM, y, 0, moveTime);
+    }
+
+    moveWallLeft({ numSpaces: 2 });
+
+    let shouldMoveRightNext = true;
+    this.movingWallIntervalId = setInterval(() => {
+      if (shouldMoveRightNext) {
+        shouldMoveRightNext = false;
+        moveWallRight({ numSpaces: 4 });
+      } else {
+        shouldMoveRightNext = true;
+        moveWallLeft({ numSpaces: 4 });
+      }
+    }, moveTime);
+  },
+
   // Function to restart the game
   restart: function() {
+    clearInterval(this.movingWallIntervalId);
     game.state.start('main');
   }
 };
